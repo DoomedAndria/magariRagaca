@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Market Finder</title>
+        <link rel='shortcut icon' href='/favicon.ico' type='image/x-icon'/>
+        <style>
+            body, html {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                background-color: #000000;
+            }
+
+            #main-container {
+                margin: 0;
+                padding: 5px 100px;
+                background-color: #000000;
+                color: white;
+            }
+
+            #main-table {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: #000000;
+            }
+
+            #main-table tbody {
+            }
+            
+            #main-table th, #main-table td{
+                border: 1px solid rgb(43, 43, 43);
+                padding: 4px;
+            }
+
+            #main-table tr:hover {
+                background-color: rgb(43, 43, 43);
+            }
+
+            #main-table th {
+                background-color: black;
+            }
+
+            #main-table .avatar-cell {
+                background-size: 48px !important;
+                background-position: center !important;
+                height: 48px;
+                width: 48px;
+                padding: 1px;
+                cursor: pointer;
+            }
+
+            #main-table .copy-text-button {
+                display: inline-block;
+                border-radius: 4px;
+                background-color: green;
+                border: none;
+                color: #FFFFFF;
+                text-align: center;
+                padding: 5px;
+                width: 50px;
+                transition: all 0.5s;
+                cursor: pointer;
+                margin: 5px;
+            }
+
+            #main-table .copy-text-button span {
+                cursor: pointer;
+                display: inline-block;
+                position: relative;
+                transition: 0.5s;
+            }
+            #main-table .listing-row.visited {
+                background-color: #000000;
+                color: #dadada;
+            }
+            a:link {
+            color: rgb(255, 255, 255);
+            background-color: transparent;
+            text-decoration: none;
+            }
+
+            a:visited {
+            color: rgb(0, 150, 255);
+            background-color: transparent;
+            text-decoration: none;
+            }
+
+            a:hover {
+            color: rgb(255, 0, 0);
+            background-color: transparent;
+            text-decoration: underline;
+            }
+
+            a:active {
+            color: yellow;
+            background-color: transparent;
+            text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body onload="main()">
+        <div id = "main-container">
+            <form id = "search-form">
+<!--                <label for="minprice">Min. price:</label>-->
+                <input type="number" min="30" max="2000" name="minprice" value="{{ minprice }}">
+<!--                <label for="maxprice">Max. price:</label>-->
+                <input type="number" min="30" max="2000" name="maxprice" value="{{ maxprice }}">
+                <br/>
+                <button onclick="document.getElementById('search-form').submit()">Search</button>
+                <br/><br/>
+            </form>
+
+            <table id="main-table">
+                <tbody>
+                    <tr>
+                        <th>მარკეტი</th>
+                        <th>ფოტო</th>
+                        <th>სახელი</th>
+                        <th>ნივთი</th>
+						<th>ფასი</th>
+                    </tr>
+                    {% for listing in listings %}
+                        <tr class="listing-row" id="lr-{{ listing.owner_avatar }}-{{ listing.owner_name }}">
+                            <td><a href="https://steamcommunity.com/market/listings/730/{{ listing.item_name }}" target="_blank">Market Link</a></td>
+                            <td href="https://steamcommunity.com/search/users/#text={{ listing.owner_name }}" 
+							    class="avatar-cell"
+                                target="_blank"  onClick="copyText('{{ listing.item_name }}')" 
+                                style="background: url('https://steamcdn-a.akamaihd.net/steamcommunity/public/images/avatars/{{ listing.owner_avatar }}.jpg')
+								no-repeat;"></td>
+                            <td><a href="https://steamcommunity.com/search/users/#text={{ listing.owner_name }}" target="_blank">{{ listing.owner_name }}</a></td>
+                            <td onclick="copyText('{{ listing.item_name }}')"> {{ listing.item_name }} - {{ listing.price }}$</td>
+							<td>{{ listing.price }}$</td>
+                            <!-- She kle kaco shena gaajvi> -->
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            const VISITED_LINK_DELIMINATOR = ',x,123,,123,x,'
+            const VISITED_LINKS_LS = 'visitedLinks'
+
+            const main = () => {
+                addSubmitListener()
+                styleVisitedListings()
+                // OE GAAJVI METQI
+            }
+
+            const copyText = (text) => {
+                const preText = "Hello add me back, just reached the weekly friend invites limit. I'm interested in your "
+                const copyText = document.createElement('textArea')
+
+                copyText.value = preText + text
+                document.body.appendChild(copyText)
+
+                copyText.select()
+                copyText.setSelectionRange(0, 99999)
+
+                document.execCommand('copy')
+                document.body.removeChild(copyText)
+            }
+
+            const addSubmitListener = () => {
+                var myForm = document.getElementById('search-form');
+                myForm.addEventListener('submit', function () {
+                    var allInputs = myForm.getElementsByTagName('input');
+
+                    for (var i = 0; i < allInputs.length; i++) {
+                        var input = allInputs[i];
+
+                        if (input.name && !input.value) {
+                            input.name = '';
+                        }
+                    }
+                });
+            }
+
+            const openAvatarFinder = (avatar, name) => {
+                addToVisitedLinks(avatar, name)
+                window.open('/avatar-finder?avatar=' + avatar + '&name=' + name, '_blank')
+            }
+
+            const addToVisitedLinks = (avatar, name) => {
+                let visitedLinks = localStorage.getItem(VISITED_LINKS_LS)
+                let linkId = avatar + '-' + name
+                if (visitedLinks) {
+                    visitedLinks = visitedLinks.split(VISITED_LINK_DELIMINATOR)
+                } else {
+                    visitedLinks = []
+                }
+
+                if (!visitedLinks.includes(linkId)) {
+                    visitedLinks.push(linkId)
+                    let linksToSave = '';
+                    for (linkId of visitedLinks) {
+                        linksToSave += linkId + VISITED_LINK_DELIMINATOR
+                    }
+                    localStorage.setItem(VISITED_LINKS_LS, linksToSave.substr(0, linksToSave.length - VISITED_LINK_DELIMINATOR.length))
+                    console.log(localStorage.getItem(VISITED_LINKS_LS))
+                    document.getElementById('lr-' + linkId).classList.add('visited')
+                }
+            }
+
+            const styleVisitedListings = () => {
+                visitedLinks = localStorage.getItem(VISITED_LINKS_LS)
+                if (!visitedLinks) {
+                    return
+                }
+
+                visitedLinks = visitedLinks.split(VISITED_LINK_DELIMINATOR)
+                for (linkId of visitedLinks) {
+                    let elem = document.getElementById('lr-' + linkId)
+                    if (elem) {
+                        elem.classList.add('visited')
+                    }
+                }
+            }
+
+            const addButtonListener = () => {
+                const btns = document.getElementsByClassName('user-count')
+                for (let btn of btns) {
+                    btn.addEventListener('click', () => {
+                        if (btn.innerHTML == 'Wait') {
+                            return
+                        }
+                        btn.innerHTML = 'Wait'
+                        const xhttp = new XMLHttpRequest()
+
+                        xhttp.onreadystatechange = function() {
+                            if (this.readyState == 4 && this.status == 200) {
+                                btn.innerHTML = this.responseText
+                            }
+                        }
+
+                        const username = btn.getAttribute('username')
+                        xhttp.open('GET', './user-count?name=' + username, true)
+                        xhttp.send()
+
+
+                    })
+                }
+            }
+
+        </script>
+    </body>
+</html>
